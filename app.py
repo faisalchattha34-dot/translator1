@@ -1,32 +1,23 @@
 import streamlit as st
 import requests
-import os
 import uuid
 
-# ---------------------------
-# Streamlit App UI
-# ---------------------------
 st.set_page_config(page_title="🌐 Language Translator", layout="centered")
 st.title("🌐 Azure Language Translator")
 
 # ---------------------------
-# Load Azure Credentials
+# User Inputs For Azure Settings
 # ---------------------------
-AZURE_KEY = os.environ.get("AZURE_TRANSLATOR_KEY")
-AZURE_ENDPOINT = os.environ.get("AZURE_TRANSLATOR_ENDPOINT")
-AZURE_REGION = os.environ.get("AZURE_TRANSLATOR_REGION")
+st.sidebar.header("🔐 Azure Translator Settings")
+
+AZURE_KEY = st.sidebar.text_input("Azure Key", type="password")
+AZURE_ENDPOINT = st.sidebar.text_input("Azure Endpoint", "https://api.cognitive.microsofttranslator.com")
+AZURE_REGION = st.sidebar.text_input("Azure Region", "eastasia")
 
 if not AZURE_KEY:
-    st.error("❌ Azure Translator Key missing. Please set environment variable: AZURE_TRANSLATOR_KEY")
-    st.stop()
-
-if not AZURE_ENDPOINT:
-    st.error("❌ Azure Translator Endpoint missing. Please set environment variable: AZURE_TRANSLATOR_ENDPOINT")
-    st.stop()
-
-if not AZURE_REGION:
-    st.error("❌ Azure Translator Region missing. Please set environment variable: AZURE_TRANSLATOR_REGION")
-    st.stop()
+    st.warning("Please enter your Azure Translator Key in the left sidebar.")
+else:
+    st.success("Azure Key Loaded Successfully!")
 
 
 # ---------------------------
@@ -49,26 +40,27 @@ def translate_text(text, from_lang, to_lang):
 
     try:
         return result[0]["translations"][0]["text"]
-    except:
-        return "Error: Invalid API Response"
+    except Exception as e:
+        return f"Error: {result}"
 
 
 # ---------------------------
-# UI Inputs
+# UI
 # ---------------------------
-text = st.text_area("Enter text to translate:")
+text = st.text_area("Enter text:")
 
 col1, col2 = st.columns(2)
-
 with col1:
     from_lang = st.selectbox("From Language", ["en", "ur", "ar", "fr", "de", "zh", "hi"])
 with col2:
     to_lang = st.selectbox("To Language", ["ur", "en", "ar", "fr", "de", "zh", "hi"])
 
 if st.button("Translate"):
-    if text.strip() == "":
-        st.warning("Please enter some text.")
+    if not AZURE_KEY:
+        st.error("❌ Please enter Azure Key in the sidebar!")
+    elif not text.strip():
+        st.warning("Please enter text to translate.")
     else:
-        translated = translate_text(text, from_lang, to_lang)
+        result = translate_text(text, from_lang, to_lang)
         st.subheader("Translated Text:")
-        st.success(translated)
+        st.success(result)
